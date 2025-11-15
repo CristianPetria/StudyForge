@@ -3,6 +3,7 @@ Study Guide API routes
 Endpoints for analyzing content, matching templates, and generating guides
 """
 
+import uuid
 from flask import Blueprint, request, jsonify, render_template
 from backend.agents.coordinator import get_coordinator
 from backend.agents.analysis_agent import get_analysis_agent
@@ -13,6 +14,9 @@ from backend.utils.logger import get_logger
 logger = get_logger(__name__)
 
 guides_bp = Blueprint('guides', __name__, url_prefix='/api')
+
+# In-memory storage for generated guides (in production, use a database)
+_generated_guides = {}
 
 
 @guides_bp.route('/analyze', methods=['POST'])
@@ -161,7 +165,7 @@ def complete_workflow():
     """
     POST /api/complete-workflow
     Orchestrates the complete workflow: analyze -> match -> generate
-    
+
     Request body:
         {
             "content": "string",
@@ -169,22 +173,30 @@ def complete_workflow():
             "template_id": "optional - if not provided, AI will match",
             "customization_options": {...}
         }
+
+    Returns:
+        {
+            "status": "success",
+            "guide_id": "uuid",
+            "guide_url": "/api/guide/{guide_id}",
+            "workflow": {...}
+        }
     """
     try:
         data = request.get_json()
-        
+
         if not data or 'content' not in data:
             logger.warning("Complete-workflow: Missing 'content'")
             return jsonify({
                 "status": "error",
                 "message": "Missing 'content' in request body"
             }), 400
-        
+
         content = data['content']
         content_type = data.get('content_type', 'text')
         template_id = data.get('template_id')
         customization = data.get('customization_options', {})
-        
+
         coordinator = get_coordinator()
         result = coordinator.process_study_request(
             content,
@@ -192,16 +204,37 @@ def complete_workflow():
             template_id,
             customization
         )
-        
+
         if result['status'] == 'success':
+            # Generate a unique ID for this guide
+            guide_id = str(uuid.uuid4())
+
+            # Extract the study guide data from the workflow result
+            study_guide = result['workflow'].get('generation', {}).get('study_guide', {})
+
+            # Store the guide
+            _generated_guides[guide_id] = {
+                "id": guide_id,
+                "template": study_guide.get('template', 'Unknown'),
+                "template_id": study_guide.get('template_id'),
+                "data": study_guide.get('data', {}),
+                "audio_url": None,  # TODO: Implement audio generation
+                "metadata": study_guide.get('metadata', {}),
+                "created_at": None  # TODO: Add timestamp
+            }
+
+            logger.info(f"✅ Guide stored with ID: {guide_id}")
+
             return jsonify({
                 "status": "success",
                 "message": "Study guide generated successfully",
+                "guide_id": guide_id,
+                "guide_url": f"/api/guide/{guide_id}",
                 "workflow": result['workflow']
             }), 200
         else:
             return jsonify(result), 500
-    
+
     except Exception as e:
         logger.error(f"Error in complete_workflow endpoint: {str(e)}", exc_info=True)
         return jsonify({
@@ -216,12 +249,19 @@ def view_guide(guide_id):
     GET /api/guide/<guide_id>
     Renders the study guide HTML template with guide data
 
-    For now, serves with dummy test data
+    Retrieves stored guide or serves test data for demo purposes
     """
     try:
         logger.info(f"Viewing guide: {guide_id}")
 
-        # Test data matching the template structure
+        # Check if this is a real generated guide
+        if guide_id in _generated_guides:
+            guide = _generated_guides[guide_id]
+            logger.info(f"✅ Found generated guide: {guide_id}")
+            return render_template('guide.html', guide=guide)
+
+        # Otherwise, serve test data for demo/testing
+        logger.info(f"⚠️ Guide {guide_id} not found, serving test data")
         test_guide = {
             "id": guide_id,
             "template": "Academic Concept",
