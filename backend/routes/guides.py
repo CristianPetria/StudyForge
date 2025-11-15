@@ -3,7 +3,7 @@ Study Guide API routes
 Endpoints for analyzing content, matching templates, and generating guides
 """
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, render_template
 from backend.agents.coordinator import get_coordinator
 from backend.agents.analysis_agent import get_analysis_agent
 from backend.agents.template_matching_agent import get_template_matching_agent
@@ -204,6 +204,195 @@ def complete_workflow():
     
     except Exception as e:
         logger.error(f"Error in complete_workflow endpoint: {str(e)}", exc_info=True)
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
+
+@guides_bp.route('/guide/<guide_id>', methods=['GET'])
+def view_guide(guide_id):
+    """
+    GET /api/guide/<guide_id>
+    Renders the study guide HTML template with guide data
+
+    For now, serves with dummy test data
+    """
+    try:
+        logger.info(f"Viewing guide: {guide_id}")
+
+        # Test data matching the template structure
+        test_guide = {
+            "id": guide_id,
+            "template": "Academic Concept",
+            "audio_url": None,  # No audio for now
+            "data": {
+                "title": "Understanding Machine Learning Fundamentals",
+                "subtitle": "A comprehensive guide to the basics of ML",
+                "sections": [
+                    {
+                        # Section 0: Overview
+                        "title": "Overview",
+                        "executive_summary": "Machine learning is a subset of artificial intelligence that enables computers to learn from data without being explicitly programmed. This guide explores the fundamental concepts, types of learning, and key algorithms that form the foundation of modern ML systems.",
+                        "key_concepts": [
+                            {
+                                "term": "Supervised Learning",
+                                "definition": "A type of machine learning where the algorithm learns from labeled training data.",
+                                "explanation": "In supervised learning, we provide the model with input-output pairs, and it learns to map inputs to outputs. Think of it as learning with a teacher who provides the correct answers.",
+                                "importance": "Supervised learning is the most common type of ML and powers applications like spam detection, image recognition, and recommendation systems."
+                            },
+                            {
+                                "term": "Training Data",
+                                "definition": "The dataset used to teach a machine learning model to make predictions.",
+                                "explanation": "Training data consists of examples that the model uses to identify patterns and relationships. The quality and quantity of training data directly impacts model performance.",
+                                "importance": "High-quality training data is essential for building accurate models. The principle 'garbage in, garbage out' is especially true in ML."
+                            },
+                            {
+                                "term": "Model",
+                                "definition": "A mathematical representation of a real-world process, learned from data.",
+                                "explanation": "A model is the output of the ML training process. It encapsulates the patterns learned from the training data and can make predictions on new, unseen data.",
+                                "importance": "The model is what you deploy in production to solve real-world problems. Understanding model types helps you choose the right approach for your task."
+                            }
+                        ]
+                    },
+                    {
+                        # Section 1: Deep Dive
+                        "title": "Deep Dive",
+                        "introduction": "Let's explore the technical details of machine learning, including the mathematical foundations, different types of algorithms, and how to evaluate model performance.",
+                        "subsections": [
+                            {
+                                "heading": "Types of Machine Learning",
+                                "content": "Machine learning can be categorized into three main types: supervised learning (learning from labeled data), unsupervised learning (finding patterns in unlabeled data), and reinforcement learning (learning through trial and error with rewards). Each type is suited for different kinds of problems and has its own set of algorithms and techniques."
+                            },
+                            {
+                                "heading": "The Learning Process",
+                                "content": "Machine learning follows a systematic process: (1) Data Collection - gathering relevant data, (2) Data Preprocessing - cleaning and preparing data, (3) Model Selection - choosing the right algorithm, (4) Training - fitting the model to data, (5) Evaluation - testing performance, and (6) Deployment - putting the model into production. Understanding this workflow is crucial for successful ML projects."
+                            }
+                        ],
+                        "formulas": [
+                            {
+                                "name": "Mean Squared Error (MSE)",
+                                "formula": "MSE = (1/n) * Σ(y_actual - y_predicted)²",
+                                "variables": {
+                                    "n": "Number of observations",
+                                    "y_actual": "Actual value from the dataset",
+                                    "y_predicted": "Value predicted by the model"
+                                },
+                                "example": "If you have 3 predictions [2, 4, 6] and actual values [1, 5, 5], MSE = (1/3) * [(1-2)² + (5-4)² + (5-6)²] = (1/3) * [1 + 1 + 1] = 1.0",
+                                "when_to_use": "Use MSE when you want to penalize larger errors more heavily. It's commonly used in regression problems."
+                            }
+                        ],
+                        "examples": [
+                            {
+                                "title": "Email Spam Detection",
+                                "scenario": "An email service wants to automatically filter spam messages from legitimate emails.",
+                                "analysis": "This is a supervised learning classification problem. We can train a model using historical emails labeled as 'spam' or 'not spam'. Features might include word frequencies, sender information, and email metadata. A Naive Bayes or Logistic Regression classifier would be appropriate.",
+                                "key_takeaway": "Supervised learning excels at classification tasks when you have labeled historical data showing the correct categorization."
+                            }
+                        ],
+                        "important_notes": [
+                            "Always split your data into training, validation, and test sets to avoid overfitting and get accurate performance metrics.",
+                            "Feature engineering (creating meaningful input variables) is often more important than choosing the fanciest algorithm.",
+                            "Start simple! A basic model that works is better than a complex model that doesn't. You can always iterate and improve."
+                        ]
+                    },
+                    {
+                        # Section 2: Applications
+                        "title": "Real-World Applications & Exam Tips",
+                        "real_world_uses": [
+                            {
+                                "context": "Healthcare - Disease Diagnosis",
+                                "application": "ML models analyze medical images (X-rays, MRIs) to detect diseases like cancer, often matching or exceeding human expert performance.",
+                                "impact": "Faster diagnosis, reduced healthcare costs, and improved patient outcomes through early detection."
+                            },
+                            {
+                                "context": "Finance - Fraud Detection",
+                                "application": "Banks use ML to identify fraudulent transactions by detecting unusual patterns in spending behavior in real-time.",
+                                "impact": "Prevents billions in fraud losses annually and protects customer accounts from unauthorized access."
+                            },
+                            {
+                                "context": "Transportation - Autonomous Vehicles",
+                                "application": "Self-driving cars use ML for object detection, path planning, and decision-making based on sensor data.",
+                                "impact": "Potential to reduce traffic accidents, improve transportation efficiency, and provide mobility to those unable to drive."
+                            }
+                        ],
+                        "exam_tips": [
+                            "Understand the difference between supervised, unsupervised, and reinforcement learning - this is often tested.",
+                            "Be able to explain overfitting and underfitting with examples. Know techniques to address each.",
+                            "Memorize common evaluation metrics (accuracy, precision, recall, F1-score) and when to use each.",
+                            "Practice explaining how specific algorithms work (e.g., linear regression, decision trees) in plain English.",
+                            "Know the bias-variance tradeoff and how it relates to model complexity."
+                        ]
+                    }
+                ],
+                "flashcards": [
+                    {
+                        "question": "What is the difference between supervised and unsupervised learning?",
+                        "answer": "Supervised learning uses labeled data (input-output pairs) to train models, while unsupervised learning finds patterns in unlabeled data without predefined categories."
+                    },
+                    {
+                        "question": "What is overfitting?",
+                        "answer": "Overfitting occurs when a model learns the training data too well, including noise and outliers, resulting in poor performance on new, unseen data."
+                    },
+                    {
+                        "question": "What is the purpose of a validation set?",
+                        "answer": "A validation set is used to tune hyperparameters and make decisions during model development, keeping the test set completely separate for final evaluation."
+                    },
+                    {
+                        "question": "What does the term 'feature' mean in machine learning?",
+                        "answer": "A feature is an individual measurable property or characteristic of the data used as input to train a machine learning model."
+                    },
+                    {
+                        "question": "What is gradient descent?",
+                        "answer": "Gradient descent is an optimization algorithm used to minimize the loss function by iteratively adjusting model parameters in the direction of steepest descent."
+                    },
+                    {
+                        "question": "What is cross-validation?",
+                        "answer": "Cross-validation is a technique where the dataset is split into multiple subsets, and the model is trained and validated multiple times to get a more reliable performance estimate."
+                    }
+                ],
+                "quiz": [
+                    {
+                        "question": "Which type of machine learning would you use for categorizing emails as spam or not spam?",
+                        "options": [
+                            "Supervised Learning",
+                            "Unsupervised Learning",
+                            "Reinforcement Learning",
+                            "Semi-supervised Learning"
+                        ],
+                        "correct_index": 0,
+                        "explanation": "Email spam detection is a supervised learning task because we have labeled examples of spam and non-spam emails that we can use to train the model."
+                    },
+                    {
+                        "question": "What is the main risk of using your test set multiple times during model development?",
+                        "options": [
+                            "The model will take longer to train",
+                            "You might overfit to the test set and get overly optimistic performance estimates",
+                            "The model will become less accurate",
+                            "It will use more memory"
+                        ],
+                        "correct_index": 1,
+                        "explanation": "Using the test set multiple times can lead to overfitting to the test set, where you inadvertently tune your model to perform well on that specific data, leading to unreliable performance estimates."
+                    },
+                    {
+                        "question": "Which metric is most appropriate for evaluating a model on an imbalanced dataset?",
+                        "options": [
+                            "Accuracy",
+                            "Mean Squared Error",
+                            "F1-Score",
+                            "R-squared"
+                        ],
+                        "correct_index": 2,
+                        "explanation": "F1-Score is better for imbalanced datasets because it considers both precision and recall, whereas accuracy can be misleading when one class is much more common than others."
+                    }
+                ]
+            }
+        }
+
+        return render_template('guide.html', guide=test_guide)
+
+    except Exception as e:
+        logger.error(f"Error in view_guide endpoint: {str(e)}", exc_info=True)
         return jsonify({
             "status": "error",
             "message": str(e)
