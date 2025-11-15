@@ -167,7 +167,7 @@
 
     <!-- Content Upload Modal -->
     <div id="upload-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div class="p-8">
                 <!-- Modal Header -->
                 <div class="flex items-center justify-between mb-6">
@@ -187,24 +187,99 @@
                     </button>
                 </div>
 
-                <!-- Content Input -->
-                <div class="mb-6">
-                    <label for="content-input" class="block text-sm font-medium text-gray-700 mb-2">
-                        Your Content
-                    </label>
-                    <textarea
-                        id="content-input"
-                        rows="12"
-                        class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition outline-none resize-none"
-                        placeholder="Paste your lecture notes, case study, documentation, or any study material here...&#10;&#10;The more content you provide, the better your study guide will be!"
-                    ></textarea>
-                    <div class="flex items-center justify-between mt-2">
-                        <span class="text-sm text-gray-500" id="char-count">0 characters</span>
-                        <span class="text-sm text-gray-500">Minimum 100 characters recommended</span>
+                <!-- Two Column Layout -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
+                    <!-- Left Column: Custom Study Guide Form -->
+                    <div class="space-y-4" id="custom-form-section">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Age Group</label>
+                            <select id="age-group" class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-indigo-500 outline-none">
+                                <option value="">Select age group...</option>
+                                <option value="high-school">High School (14-18)</option>
+                                <option value="university">University (18-25)</option>
+                                <option value="professional">Professional (25+)</option>
+                                <option value="lifelong">Lifelong Learner</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Learning Style</label>
+                            <select id="learning-style" class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-indigo-500 outline-none">
+                                <option value="">Select learning style...</option>
+                                <option value="visual">Visual (diagrams, charts)</option>
+                                <option value="textual">Textual (notes, summaries)</option>
+                                <option value="practical">Practical (examples, exercises)</option>
+                                <option value="mixed">Mixed (combination)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Course Type</label>
+                            <select id="course-type" class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-indigo-500 outline-none">
+                                <option value="">Select course type...</option>
+                                <option value="business">Business</option>
+                                <option value="science">Science</option>
+                                <option value="technical">Technical</option>
+                                <option value="humanities">Humanities</option>
+                                <option value="languages">Languages</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="study-description" class="block text-sm font-medium text-gray-700 mb-2">
+                                What kind of study guide do you need?
+                            </label>
+                            <textarea
+                                id="study-description"
+                                rows="6"
+                                class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition outline-none resize-none"
+                                placeholder="Describe what you're studying and what you need. E.g., 'I need a comprehensive study guide for marketing concepts with examples and case studies'"
+                            ></textarea>
+                            <div class="flex items-center justify-between mt-2">
+                                <span class="text-sm text-gray-500" id="desc-char-count">0 characters</span>
+                            </div>
+                        </div>
+
+                        <!-- Suggested Templates Section -->
+                        <div id="suggested-templates" class="hidden bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg p-4 border-2 border-indigo-200">
+                            <h4 class="font-semibold text-gray-900 mb-3">Recommended Templates</h4>
+                            <div id="templates-suggestions" class="space-y-2"></div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: File Upload -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Upload Study Materials (Optional)</label>
+                            <div class="border-2 border-dashed border-indigo-300 rounded-lg p-8 text-center bg-indigo-50 hover:bg-indigo-100 transition cursor-pointer" 
+                                 onclick="document.getElementById('file-upload').click()"
+                                 ondrop="handleDrop(event)"
+                                 ondragover="event.preventDefault(); this.classList.add('bg-indigo-200')"
+                                 ondragleave="this.classList.remove('bg-indigo-200')">
+                                <input type="file" id="file-upload" class="hidden" multiple accept=".pdf,.doc,.docx,.txt,.ppt,.pptx" onchange="handleFileSelect(event)">
+                                <svg class="mx-auto h-12 w-12 text-indigo-400 mb-2" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                    <path d="M28 8H12a4 4 0 00-4 4v20a4 4 0 004 4h24a4 4 0 004-4V20m-12-8v12m0 0l4-4m-4 4l-4-4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                <p class="text-sm font-medium text-gray-700">Click to upload or drag and drop</p>
+                                <p class="text-xs text-gray-500 mt-1">PDF, DOC, DOCX, TXT, PPT (Max 10MB)</p>
+                            </div>
+                            <div id="file-list" class="mt-4 space-y-2"></div>
+                        </div>
+
+                        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+                            <h4 class="font-semibold text-blue-900 mb-2">💡 How to Use</h4>
+                            <ul class="text-sm text-blue-800 space-y-1">
+                                <li>• Fill in your preferences on the left</li>
+                                <li>• Optionally upload course materials</li>
+                                <li>• Click "Create Study Guide"</li>
+                                <li>• Get a personalized study guide</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Options -->
+                <!-- Customization Options -->
                 <div class="mb-6 bg-gray-50 rounded-xl p-4">
                     <h4 class="font-semibold text-gray-900 mb-3">Customization Options</h4>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -230,11 +305,11 @@
                 <!-- Action Buttons -->
                 <div class="flex gap-4">
                     <button
-                        onclick="analyzeContent()"
+                        onclick="suggestTemplatesAndGenerate()"
                         id="analyze-btn"
                         class="flex-1 px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition transform"
                     >
-                        <span id="analyze-btn-text">Analyze & Generate Study Guide</span>
+                        <span id="analyze-btn-text">Create Study Guide</span>
                         <span id="analyze-btn-spinner" class="hidden">
                             <svg class="animate-spin inline w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

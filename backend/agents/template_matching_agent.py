@@ -192,6 +192,212 @@ class TemplateMatchingAgent:
                 "status": "error",
                 "message": f"Template matching failed: {str(e)}"
             }
+    
+    def find_best_templates(self, query_text, top_k=3, user_preferences=None):
+        """
+        Find the best matching templates for a given query using Qdrant semantic search
+        
+        Args:
+            query_text (str): Search query describing what the user needs
+            top_k (int): Number of top templates to return
+            user_preferences (dict): Optional dict with age_group, learning_style, course_type
+        
+        Returns:
+            list: List of suggested templates with match scores
+        """
+        try:
+            if not self.mistral_client:
+                logger.warning("Mistral client not available, returning default templates")
+                return [
+                    {
+                        "id": t["id"],
+                        "name": t["name"],
+                        "description": t["description"],
+                        "icon_emoji": t["icon_emoji"],
+                        "match_score": 0.5
+                    }
+                    for t in STUDY_TEMPLATES[:top_k]
+                ]
+            
+            # Build comprehensive search query from form data and description
+            enhanced_query = self._build_search_query(query_text, user_preferences)
+            logger.info(f"🔍 Finding best templates for query: {enhanced_query[:100]}")
+            
+            # Get embedding for the enhanced query
+            query_embedding_response = self.mistral_client.embeddings.create(
+                model="mistral-embed",
+                inputs=[enhanced_query]
+            )
+            query_vector = query_embedding_response.data[0].embedding
+            
+            # If Qdrant is available and initialized, use semantic search
+            if self.qdrant_client and self._initialized:
+                try:
+                    search_results = self.qdrant_client.search(
+                        collection_name=self.template_collection,
+                        query_vector=query_vector,
+                        limit=top_k
+                    )
+                    
+                    suggested_templates = []
+                    for result in search_results:
+                        suggested_templates.append({
+                            "id": result.payload["template_id"],
+                            "name": result.payload["template_name"],
+                            "description": result.payload["description"],
+                            "icon_emoji": result.payload["icon_emoji"],
+                            "match_score": float(result.score),
+                            "match_details": {
+                                "semantic_match": True,
+                                "query_type": user_preferences.get('course_type', 'unknown') if user_preferences else 'unknown',
+                                "learning_style": user_preferences.get('learning_style', 'unknown') if user_preferences else 'unknown'
+                            }
+                        })
+                    
+                    logger.info(f"✅ Found {len(suggested_templates)} templates via Qdrant semantic search")
+                    return suggested_templates
+                
+                except Exception as e:
+                    logger.warning(f"Qdrant semantic search failed: {e}, falling back to keyword matching")
+            
+            # Fallback: Return templates based on keyword and preference matching
+            logger.info("📚 Using fallback keyword-based template matching")
+            return self._keyword_based_matching(enhanced_query, query_text, user_preferences, top_k)
+        
+        except Exception as e:
+            logger.error(f"❌ Error finding templates: {str(e)}", exc_info=True)
+            # Return default templates on error
+            return [
+                {
+                    "id": t["id"],
+                    "name": t["name"],
+                    "description": t["description"],
+                    "icon_emoji": t["icon_emoji"],
+                    "match_score": 0.5
+                }
+                for t in STUDY_TEMPLATES[:top_k]
+            ]
+    
+    def _build_search_query(self, description, user_preferences=None):
+        """
+        Build a comprehensive search query from form data and natural language description
+        
+        Args:
+            description (str): User's natural language description
+            user_preferences (dict): Form data with age_group, learning_style, course_type
+        
+        Returns:
+            str: Enhanced search query combining all information
+        """
+        if not user_preferences:
+            return description
+        
+        # Map user preferences to search terms
+        age_group = user_preferences.get('age_group', '')
+        learning_style = user_preferences.get('learning_style', '')
+        course_type = user_preferences.get('course_type', '')
+        
+        # Build semantic query
+        query_parts = [description]
+        
+        if learning_style:
+            learning_style_map = {
+                'visual': 'visual diagrams charts infographics',
+                'textual': 'notes summaries text-based written content',
+                'practical': 'examples exercises hands-on practical applications',
+                'mixed': 'diverse mixed multimedia content'
+            }
+            query_parts.append(learning_style_map.get(learning_style, learning_style))
+        
+        if course_type:
+            course_type_map = {
+                'business': 'business marketing economics finance management',
+                'science': 'science biology chemistry physics mathematics',
+                'technical': 'technical programming engineering APIs documentation',
+                'humanities': 'humanities literature history philosophy arts',
+                'languages': 'languages linguistics vocabulary grammar',
+                'other': 'general content'
+            }
+            query_parts.append(course_type_map.get(course_type, course_type))
+        
+        if age_group:
+            age_group_map = {
+                'high-school': 'high school beginner level introductory',
+                'university': 'university advanced college academic',
+                'professional': 'professional expert practitioner industry',
+                'lifelong': 'lifelong learner general audience'
+            }
+            query_parts.append(age_group_map.get(age_group, age_group))
+        
+        enhanced_query = ' '.join(query_parts)
+        logger.info(f"📝 Enhanced query: {enhanced_query[:150]}")
+        return enhanced_query
+    
+    def _keyword_based_matching(self, enhanced_query, original_description, user_preferences, top_k):
+        """
+        Fallback keyword-based matching when Qdrant is unavailable
+        
+        Args:
+            enhanced_query (str): Combined search query
+            original_description (str): Original user description
+            user_preferences (dict): Form preferences
+            top_k (int): Number of templates to return
+        
+        Returns:
+            list: Ranked templates based on keyword matching
+        """
+        query_lower = enhanced_query.lower()
+        keywords = set(word for word in query_lower.split() if len(word) > 3)
+        
+        scored_templates = []
+        for template in STUDY_TEMPLATES:
+            score = 0.0
+            template_text = f"{template['name']} {template['description']} {template['example_use_case']}".lower()
+            
+            # Keyword matching
+            matching_keywords = sum(1 for keyword in keywords if keyword in template_text)
+            score += matching_keywords * 0.1
+            
+            # Course type matching
+            if user_preferences:
+                course_type = user_preferences.get('course_type', '')
+                if course_type and course_type.lower() in template_text:
+                    score += 0.2
+                
+                # Learning style matching
+                learning_style = user_preferences.get('learning_style', '')
+                if learning_style == 'visual' and any(term in template_text for term in ['diagram', 'visual', 'chart']):
+                    score += 0.15
+                elif learning_style == 'practical' and any(term in template_text for term in ['example', 'exercise', 'practice']):
+                    score += 0.15
+                elif learning_style == 'textual' and any(term in template_text for term in ['summary', 'notes', 'text']):
+                    score += 0.15
+            
+            scored_templates.append({
+                "template": template,
+                "score": min(score, 1.0)
+            })
+        
+        # Sort by score and return top_k
+        scored_templates.sort(key=lambda x: x["score"], reverse=True)
+        
+        suggested_templates = [
+            {
+                "id": item["template"]["id"],
+                "name": item["template"]["name"],
+                "description": item["template"]["description"],
+                "icon_emoji": item["template"]["icon_emoji"],
+                "match_score": item["score"],
+                "match_details": {
+                    "semantic_match": False,
+                    "matching_method": "keyword_based"
+                }
+            }
+            for item in scored_templates[:top_k]
+        ]
+        
+        logger.info(f"✅ Found {len(suggested_templates)} templates via keyword matching")
+        return suggested_templates
 
 
 # Global agent instance
