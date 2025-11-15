@@ -427,7 +427,7 @@ async function suggestTemplates() {
 }
 
 /**
- * Display suggested templates
+ * Display suggested templates (NEW: Enhanced with visual selection UI)
  */
 function displaySuggestedTemplates(suggestedTemplates) {
     const container = document.getElementById('suggested-templates');
@@ -435,18 +435,36 @@ function displaySuggestedTemplates(suggestedTemplates) {
 
     templatesDiv.innerHTML = '';
 
-    suggestedTemplates.forEach(template => {
+    suggestedTemplates.forEach((template, index) => {
         const templateEl = document.createElement('div');
-        templateEl.className = 'p-3 bg-white rounded-lg border-l-4 border-indigo-500 hover:shadow-md transition cursor-pointer';
+        const isTopMatch = index === 0;
+        const matchPercentage = template.match_score ? Math.round(template.match_score * 100) : 0;
+
+        // Truncate description for compact display
+        const shortDescription = template.description.length > 100
+            ? template.description.substring(0, 100) + '...'
+            : template.description;
+
+        templateEl.className = `p-4 bg-white rounded-xl border-2 ${isTopMatch ? 'border-indigo-500 shadow-lg ring-2 ring-indigo-300' : 'border-gray-200'} hover:shadow-xl hover:scale-105 transition-all duration-200 cursor-pointer relative overflow-hidden`;
+        templateEl.onclick = () => selectAndGenerateWithTemplate(template.id);
+
         templateEl.innerHTML = `
-            <div class="flex items-start justify-between">
+            ${isTopMatch ? '<div class="absolute top-0 right-0 bg-indigo-600 text-white text-xs px-3 py-1 rounded-bl-lg font-semibold">🏆 Best</div>' : ''}
+            <div class="flex flex-col h-full">
                 <div class="flex-1">
-                    <h5 class="font-semibold text-gray-900">${template.name}</h5>
-                    <p class="text-xs text-gray-600 mt-1">${template.description}</p>
-                    ${template.match_score ? `<p class="text-xs text-indigo-600 mt-1">Match Score: ${Math.round(template.match_score * 100)}%</p>` : ''}
+                    <div class="text-3xl mb-2">${template.icon_emoji || '📚'}</div>
+                    <h5 class="font-bold text-gray-900 text-base mb-2">${template.name}</h5>
+                    <p class="text-xs text-gray-600 mb-3 line-clamp-3">${shortDescription}</p>
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="flex-1 bg-gray-200 rounded-full h-1.5">
+                            <div class="bg-gradient-to-r from-indigo-500 to-purple-500 h-1.5 rounded-full transition-all" style="width: ${matchPercentage}%"></div>
+                        </div>
+                        <span class="text-xs font-bold text-indigo-600">${matchPercentage}%</span>
+                    </div>
+                    ${template.match_details?.semantic_match ? '<p class="text-xs text-green-600 font-medium">✓ AI Match</p>' : '<p class="text-xs text-gray-500">Keyword Match</p>'}
                 </div>
-                <button onclick="selectSuggestedTemplate('${template.id}')" class="px-3 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700 transition">
-                    Use
+                <button class="w-full mt-3 py-2 ${isTopMatch ? 'bg-gradient-to-r from-indigo-600 to-purple-600' : 'bg-gray-700'} text-white rounded-lg text-sm font-semibold hover:shadow-lg transition">
+                    Select →
                 </button>
             </div>
         `;
@@ -454,6 +472,74 @@ function displaySuggestedTemplates(suggestedTemplates) {
     });
 
     container.classList.remove('hidden');
+    // Scroll to suggestions
+    container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+/**
+ * NEW: Select a template from suggestions and generate the study guide
+ */
+async function selectAndGenerateWithTemplate(templateId) {
+    const description = window.userStudyDescription || document.getElementById('study-description').value.trim();
+
+    if (!description) {
+        showToast('Please provide study content first', 'error');
+        return;
+    }
+
+    selectedTemplate = { id: templateId };
+    console.log('✅ User selected template:', templateId);
+
+    showProgress('Generating your customized study guide...', 20);
+
+    try {
+        const options = {
+            length: document.getElementById('length-option').value,
+            include_examples: document.getElementById('include-examples').checked,
+            include_questions: document.getElementById('include-questions').checked
+        };
+
+        updateProgress('Creating study guide with AI...', 50);
+
+        const generateResponse = await fetch(`${API_BASE_URL}/api/complete-workflow`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                content: description,
+                content_type: 'text',
+                template_id: templateId,
+                customization_options: options
+            })
+        });
+
+        const generateData = await generateResponse.json();
+        console.log('✅ Generation result:', generateData);
+
+        if (generateData.status !== 'success') {
+            throw new Error(generateData.message || 'Guide generation failed');
+        }
+
+        updateProgress('Complete! Opening your study guide...', 100);
+
+        setTimeout(() => {
+            hideProgress();
+            closeModal();
+
+            // Redirect to the generated guide
+            if (generateData.guide_id) {
+                window.location.href = `${API_BASE_URL}/api/guide/${generateData.guide_id}`;
+            } else {
+                showToast('Study guide created but URL not available', 'info');
+            }
+        }, 500);
+
+    } catch (error) {
+        console.error('❌ Error:', error);
+        hideProgress();
+        showToast(error.message || 'Failed to generate study guide. Please try again.', 'error');
+    }
 }
 
 /**

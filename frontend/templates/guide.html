@@ -615,10 +615,12 @@
             </div>
 
             <!-- Applications Section -->
+            {% if guide.data.sections|length > 2 %}
             <div class="section" id="applications">
                 {% set applications = guide.data.sections[2] %}
                 <h2>{{ applications.title }}</h2>
 
+                {% if applications.real_world_uses %}
                 <h3>🏼 Real-World Applications</h3>
                 {% for app in applications.real_world_uses %}
                 <div class="example-box">
@@ -627,7 +629,9 @@
                     <p><strong>Impact:</strong> {{ app.impact }}</p>
                 </div>
                 {% endfor %}
+                {% endif %}
 
+                {% if applications.exam_tips %}
                 <h3>🎯 Exam Tips</h3>
                 <div class="important-note">
                     <ul>
@@ -636,7 +640,9 @@
                     {% endfor %}
                     </ul>
                 </div>
+                {% endif %}
             </div>
+            {% endif %}
 
             <!-- Flashcards Section -->
             <div class="section" id="flashcards">

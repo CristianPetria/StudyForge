@@ -31,6 +31,25 @@
 </head>
 <body class="bg-gradient-to-br from-indigo-50 via-white to-purple-50 min-h-screen font-sans">
 
+    <!-- Fixed Loading Indicator (Top of Page) -->
+    <div id="global-loading" class="hidden fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-indigo-600 to-purple-600 shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span class="text-white font-semibold" id="global-loading-text">Processing...</span>
+                </div>
+                <span class="text-white text-sm font-medium" id="global-loading-percent">0%</span>
+            </div>
+            <div class="w-full bg-white bg-opacity-20 rounded-full h-2 mt-2">
+                <div id="global-loading-bar" class="bg-white h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- Header -->
     <header class="container mx-auto px-6 py-6">
         <div class="flex items-center justify-between">
@@ -241,11 +260,6 @@
                             </div>
                         </div>
 
-                        <!-- Suggested Templates Section -->
-                        <div id="suggested-templates" class="hidden bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg p-4 border-2 border-indigo-200">
-                            <h4 class="font-semibold text-gray-900 mb-3">Recommended Templates</h4>
-                            <div id="templates-suggestions" class="space-y-2"></div>
-                        </div>
                     </div>
 
                     <!-- Right Column: File Upload -->
@@ -279,25 +293,85 @@
                     </div>
                 </div>
 
+                <!-- Suggested Templates Section (Full Width) -->
+                <div id="suggested-templates" class="hidden bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-6 border-2 border-indigo-200 mb-6">
+                    <h4 class="font-bold text-gray-900 mb-4 text-lg">✨ Recommended Templates for You</h4>
+                    <div id="templates-suggestions" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-indigo-400 scrollbar-track-indigo-100"></div>
+                </div>
+
                 <!-- Customization Options -->
                 <div class="mb-6 bg-gray-50 rounded-xl p-4">
                     <h4 class="font-semibold text-gray-900 mb-3">Customization Options</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
                             <label class="block text-sm text-gray-700 mb-1">Guide Length</label>
-                            <select id="length-option" class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-indigo-500 outline-none">
+                            <select id="length-option" class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-indigo-500 outline-none text-sm">
                                 <option value="short">Short (1-2 pages)</option>
                                 <option value="medium" selected>Medium (3-5 pages)</option>
                                 <option value="long">Long (6+ pages)</option>
+                                <option value="comprehensive">Comprehensive (10+ pages)</option>
                             </select>
                         </div>
+                        <div>
+                            <label class="block text-sm text-gray-700 mb-1">Detail Level</label>
+                            <select id="detail-level" class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-indigo-500 outline-none text-sm">
+                                <option value="basic">Basic</option>
+                                <option value="intermediate" selected>Intermediate</option>
+                                <option value="advanced">Advanced</option>
+                                <option value="expert">Expert</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-700 mb-1">Focus Area</label>
+                            <select id="focus-area" class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-indigo-500 outline-none text-sm">
+                                <option value="theory">Theory & Concepts</option>
+                                <option value="practical" selected>Practical Application</option>
+                                <option value="exam">Exam Preparation</option>
+                                <option value="balanced">Balanced Mix</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-700 mb-1">Format Style</label>
+                            <select id="format-style" class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-indigo-500 outline-none text-sm">
+                                <option value="bullet">Bullet Points</option>
+                                <option value="narrative" selected>Narrative</option>
+                                <option value="outline">Structured Outline</option>
+                                <option value="qa">Q&A Format</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
                         <div class="flex items-center">
                             <input type="checkbox" id="include-examples" checked class="mr-2 w-4 h-4 text-indigo-600">
-                            <label for="include-examples" class="text-sm text-gray-700">Include Examples</label>
+                            <label for="include-examples" class="text-sm text-gray-700">Examples</label>
                         </div>
                         <div class="flex items-center">
                             <input type="checkbox" id="include-questions" checked class="mr-2 w-4 h-4 text-indigo-600">
                             <label for="include-questions" class="text-sm text-gray-700">Practice Questions</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="include-diagrams" class="mr-2 w-4 h-4 text-indigo-600">
+                            <label for="include-diagrams" class="text-sm text-gray-700">Diagrams</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="include-flashcards" checked class="mr-2 w-4 h-4 text-indigo-600">
+                            <label for="include-flashcards" class="text-sm text-gray-700">Flashcards</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="include-summary" checked class="mr-2 w-4 h-4 text-indigo-600">
+                            <label for="include-summary" class="text-sm text-gray-700">Summary</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="include-resources" class="mr-2 w-4 h-4 text-indigo-600">
+                            <label for="include-resources" class="text-sm text-gray-700">Resources</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="include-timeline" class="mr-2 w-4 h-4 text-indigo-600">
+                            <label for="include-timeline" class="text-sm text-gray-700">Timeline</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="include-glossary" class="mr-2 w-4 h-4 text-indigo-600">
+                            <label for="include-glossary" class="text-sm text-gray-700">Glossary</label>
                         </div>
                     </div>
                 </div>
@@ -305,11 +379,11 @@
                 <!-- Action Buttons -->
                 <div class="flex gap-4">
                     <button
-                        onclick="suggestTemplatesAndGenerate()"
+                        onclick="suggestTemplates()"
                         id="analyze-btn"
                         class="flex-1 px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition transform"
                     >
-                        <span id="analyze-btn-text">Create Study Guide</span>
+                        <span id="analyze-btn-text">🔍 Find Perfect Template</span>
                         <span id="analyze-btn-spinner" class="hidden">
                             <svg class="animate-spin inline w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -450,6 +524,6 @@
     </footer>
 
     <!-- JavaScript -->
-    <script src="/static/js/app.js"></script>
+    <script src="/static/js/app.js?v={{ range(1000, 9999) | random }}"></script>
 </body>
 </html>

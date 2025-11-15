@@ -39,7 +39,12 @@ class TemplateMatchingAgent:
             # Prepare texts to embed
             texts_to_embed = []
             for template in STUDY_TEMPLATES:
-                embed_text = f"{template['name']}: {template['description']}. Best for {template['example_use_case']}"
+                # Use qdrant_description if available, otherwise fall back to best_for list
+                if 'qdrant_description' in template:
+                    embed_text = f"{template['name']}: {template['description']}. {template['qdrant_description']}"
+                else:
+                    best_for = ', '.join(template.get('best_for', []))
+                    embed_text = f"{template['name']}: {template['description']}. Best for {best_for}"
                 texts_to_embed.append(embed_text)
             
             logger.info(f"📚 Creating embeddings for {len(STUDY_TEMPLATES)} templates...")
@@ -196,28 +201,39 @@ class TemplateMatchingAgent:
     def find_best_templates(self, query_text, top_k=3, user_preferences=None):
         """
         Find the best matching templates for a given query using Qdrant semantic search
-        
+
         Args:
             query_text (str): Search query describing what the user needs
             top_k (int): Number of top templates to return
             user_preferences (dict): Optional dict with age_group, learning_style, course_type
-        
+
         Returns:
-            list: List of suggested templates with match scores
+            list: List of suggested templates with match scores (always returns at least the generic template)
         """
         try:
             if not self.mistral_client:
-                logger.warning("Mistral client not available, returning default templates")
-                return [
-                    {
-                        "id": t["id"],
-                        "name": t["name"],
-                        "description": t["description"],
-                        "icon_emoji": t["icon_emoji"],
-                        "match_score": 0.5
-                    }
-                    for t in STUDY_TEMPLATES[:top_k]
-                ]
+                logger.warning("Mistral client not available, returning default templates with generic fallback")
+                # Always include the generic template first
+                templates_to_return = []
+                generic_template = next((t for t in STUDY_TEMPLATES if t["id"] == "generic_study_guide"), STUDY_TEMPLATES[0])
+                templates_to_return.append({
+                    "id": generic_template["id"],
+                    "name": generic_template["name"],
+                    "description": generic_template["description"],
+                    "icon_emoji": generic_template["emoji"],
+                    "match_score": 0.7
+                })
+                # Add other templates
+                for t in STUDY_TEMPLATES[:top_k-1]:
+                    if t["id"] != "generic_study_guide":
+                        templates_to_return.append({
+                            "id": t["id"],
+                            "name": t["name"],
+                            "description": t["description"],
+                            "icon_emoji": t["emoji"],
+                            "match_score": 0.5
+                        })
+                return templates_to_return[:top_k]
             
             # Build comprehensive search query from form data and description
             enhanced_query = self._build_search_query(query_text, user_preferences)
@@ -266,17 +282,35 @@ class TemplateMatchingAgent:
         
         except Exception as e:
             logger.error(f"❌ Error finding templates: {str(e)}", exc_info=True)
-            # Return default templates on error
-            return [
-                {
-                    "id": t["id"],
-                    "name": t["name"],
-                    "description": t["description"],
-                    "icon_emoji": t["icon_emoji"],
-                    "match_score": 0.5
+            # Always return generic template first as fallback
+            templates_to_return = []
+            generic_template = next((t for t in STUDY_TEMPLATES if t["id"] == "generic_study_guide"), STUDY_TEMPLATES[0])
+            templates_to_return.append({
+                "id": generic_template["id"],
+                "name": generic_template["name"],
+                "description": generic_template["description"],
+                "icon_emoji": generic_template.get("emoji", "✨"),
+                "match_score": 0.8,
+                "match_details": {
+                    "semantic_match": False,
+                    "matching_method": "fallback_generic"
                 }
-                for t in STUDY_TEMPLATES[:top_k]
-            ]
+            })
+            # Add other templates
+            for t in STUDY_TEMPLATES[:top_k]:
+                if t["id"] != "generic_study_guide":
+                    templates_to_return.append({
+                        "id": t["id"],
+                        "name": t["name"],
+                        "description": t["description"],
+                        "icon_emoji": t.get("emoji", "📚"),
+                        "match_score": 0.5,
+                        "match_details": {
+                            "semantic_match": False,
+                            "matching_method": "fallback_default"
+                        }
+                    })
+            return templates_to_return[:top_k]
     
     def _build_search_query(self, description, user_preferences=None):
         """

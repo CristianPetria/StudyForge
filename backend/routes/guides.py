@@ -258,6 +258,84 @@ def view_guide_json(guide_id):
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
+@guides_bp.route('/guide/<guide_id>/edit', methods=['POST'])
+def edit_guide(guide_id):
+    """
+    POST /api/guide/<guide_id>/edit
+    Edit a specific section of the guide using Mistral AI
+
+    Request body:
+        {
+            "section_path": "sections[0].key_concepts[0].explanation",
+            "instruction": "Make this more concise",
+            "current_content": "..."
+        }
+    """
+    try:
+        if guide_id not in _generated_guides:
+            return jsonify({
+                "status": "error",
+                "message": "Guide not found"
+            }), 404
+
+        data = request.get_json()
+        instruction = data.get('instruction', '')
+        current_content = data.get('current_content', '')
+        section_path = data.get('section_path', '')
+
+        if not instruction or not current_content:
+            return jsonify({
+                "status": "error",
+                "message": "Missing required fields: instruction and current_content"
+            }), 400
+
+        logger.info(f"🎨 Editing guide {guide_id}, instruction: {instruction[:50]}...")
+
+        # Use Mistral to edit the content
+        from backend.utils.clients import get_mistral_client
+        mistral_client = get_mistral_client()
+
+        if not mistral_client:
+            return jsonify({
+                "status": "error",
+                "message": "Mistral AI service not available"
+            }), 503
+
+        edit_prompt = f"""You are an expert educational content editor. Edit the following content based on the user's instruction.
+
+USER INSTRUCTION: {instruction}
+
+CURRENT CONTENT:
+{current_content}
+
+Return ONLY the edited content, without any explanations or markdown formatting. Keep the same style and educational tone."""
+
+        response = mistral_client.chat.complete(
+            model="mistral-small-latest",
+            messages=[{"role": "user", "content": edit_prompt}]
+        )
+
+        edited_content = response.choices[0].message.content.strip()
+        logger.info(f"✅ Content edited successfully")
+
+        # Update the guide in storage
+        guide = _generated_guides[guide_id]
+        # TODO: Apply the edit to the specific section_path
+
+        return jsonify({
+            "status": "success",
+            "edited_content": edited_content,
+            "original_content": current_content
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error editing guide: {str(e)}", exc_info=True)
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
+
 @guides_bp.route('/guide/<guide_id>', methods=['GET'])
 def view_guide(guide_id):
     """

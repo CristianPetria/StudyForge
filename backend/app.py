@@ -37,6 +37,10 @@ def create_app():
         static_folder=str(static_folder),
         static_url_path='/static'
     )
+
+    # Disable template caching in development
+    app.config['TEMPLATES_AUTO_RELOAD'] = True
+    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
     
     # Enable CORS for all routes
     CORS(app)
