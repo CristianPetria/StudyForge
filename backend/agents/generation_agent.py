@@ -13,58 +13,135 @@ logger = get_logger(__name__)
 
 class GenerationAgent:
     """Agent for generating study guides"""
-    
+
     def __init__(self):
         self.mistral_client = get_mistral_client()
         if not self.mistral_client:
             logger.warning("Generation Agent: Mistral client not available")
-    
-    def generate_guide(self, template_id, analysis=None, customization=None):
-        """
-        Generate a study guide for the given template and analysis
 
-        Args:
-            template_id (str): ID of the template to use
-            analysis (dict): Content analysis results
-            customization (dict): Customization options (length, include_examples, include_questions)
+    def _get_historical_timeline_prompt(self, topic, subject, difficulty, length_pref, content_to_study, include_examples, include_questions):
+        """Generate prompt specifically for historical timeline templates"""
+        return f"""You are an expert historian and educational content creator. Generate a comprehensive historical study guide in EXACT JSON format.
 
-        Returns:
-            dict: Generated study guide with structured JSON matching guide.html template
-        """
-        try:
-            if not self.mistral_client:
-                return {
-                    "status": "error",
-                    "message": "Mistral AI service not available"
-                }
+TOPIC: {topic}
+SUBJECT: {subject}
+DIFFICULTY LEVEL: {difficulty}
+LENGTH PREFERENCE: {length_pref}
 
-            # Find the template
-            template = next(
-                (t for t in STUDY_TEMPLATES if t['id'] == template_id),
-                None
-            )
+HISTORICAL CONTENT TO ANALYZE:
+{content_to_study}
 
-            if not template:
-                return {
-                    "status": "error",
-                    "message": f"Template '{template_id}' not found"
-                }
+YOU MUST RETURN ONLY VALID JSON (no markdown, no code blocks, no explanations) with this EXACT structure:
 
-            analysis = analysis or {}
-            customization = customization or {}
+{{
+  "title": "Main title for the historical study guide",
+  "subtitle": "Brief subtitle describing the time period or topic",
+  "subject": "{subject}",
+  "difficulty_level": "{difficulty}",
+  "study_time": "Estimated study time (e.g., '2-3 hours')",
+  "sections": [
+    {{
+      "title": "Overview & Timeline",
+      "executive_summary": "A 2-3 sentence summary of the historical period/topic",
+      "key_concepts": [
+        {{
+          "term": "Historical concept or term",
+          "definition": "Brief definition",
+          "explanation": "Detailed explanation in 2-3 sentences",
+          "importance": "Why this concept matters historically"
+        }}
+      ],
+      "timeline": [
+        {{
+          "date": "Year or date range (e.g., '1789' or '1914-1918')",
+          "event": "Brief event description",
+          "significance": "Why this event matters",
+          "related_figures": ["Person 1", "Person 2"]
+        }}
+      ]
+    }},
+    {{
+      "title": "Historical Deep Dive",
+      "introduction": "Introduction to the detailed historical content",
+      "subsections": [
+        {{
+          "heading": "Subsection title (e.g., 'Political Climate', 'Economic Factors')",
+          "content": "Detailed explanation of this aspect (2-3 paragraphs)"
+        }}
+      ],
+      "historical_figures": [
+        {{
+          "name": "Person's full name",
+          "role": "Their role or title",
+          "contribution": "What they did and why it mattered",
+          "years_active": "Time period (e.g., '1789-1799')"
+        }}
+      ],
+      "causes_and_effects": [
+        {{
+          "cause": "What led to this event/development",
+          "effect": "What resulted from it",
+          "evidence": "Supporting historical evidence or examples"
+        }}
+      ],
+      "important_notes": [
+        "Important historical note 1",
+        "Important historical note 2"
+      ]
+    }},
+    {{
+      "title": "Historical Significance & Context",
+      "real_world_uses": [
+        {{
+          "context": "Modern relevance or field",
+          "application": "How this history applies today",
+          "impact": "The lasting impact or legacy"
+        }}
+      ],
+      "exam_tips": [
+        "Exam tip 1 (focus on dates, key figures, causes/effects)",
+        "Exam tip 2",
+        "Exam tip 3"
+      ]
+    }}
+  ],
+  "flashcards": [
+    {{
+      "question": "Historical question (dates, events, people)",
+      "answer": "Answer with key dates and context"
+    }}
+  ],
+  "quiz": [
+    {{
+      "question": "Historical quiz question",
+      "options": [
+        "Option 1",
+        "Option 2",
+        "Option 3",
+        "Option 4"
+      ],
+      "correct_index": 0,
+      "explanation": "Explanation with historical context"
+    }}
+  ]
+}}
 
-            logger.info(f"📝 Generating study guide: {template['name']}")
+REQUIREMENTS FOR HISTORICAL TIMELINE:
+1. Generate {"at least 8-12 timeline events" if length_pref != "short" else "5-7 timeline events"} in chronological order
+2. Include {"at least 5-7 key historical figures" if length_pref != "short" else "3-4 key historical figures"}
+3. Create {"3-4 subsections" if length_pref != "short" else "2 subsections"} covering different aspects (political, economic, social, cultural)
+4. Provide {"4-6 cause-and-effect relationships" if length_pref != "short" else "2-3 cause-and-effect relationships"}
+5. Generate {" at least 8-12 flashcards" if include_questions else "5-7 flashcards"} focusing on dates, events, and people
+6. Create {"6-10 quiz questions" if include_questions else "4-5 quiz questions"} about historical facts
+7. Each quiz question must have exactly 4 options
+8. Include 3-5 examples of modern relevance/legacy
+9. Provide 5-7 exam tips specific to history exams
 
-            # Build the generation prompt
-            content_to_study = analysis.get('content', 'No content provided')
-            topic = analysis.get('topic', 'General Topic')
-            subject = analysis.get('subject', 'General')
-            difficulty = analysis.get('difficulty', 'intermediate')
-            length_pref = customization.get('length', 'medium')
-            include_examples = customization.get('include_examples', True)
-            include_questions = customization.get('include_questions', True)
+CRITICAL: Return ONLY the JSON object. No markdown formatting, no ```json```, no explanations before or after."""
 
-            generation_prompt = f"""You are an expert educational content creator. Generate a comprehensive study guide in EXACT JSON format.
+    def _get_standard_prompt(self, topic, subject, difficulty, length_pref, content_to_study, include_examples, include_questions):
+        """Generate prompt for standard (non-historical) templates"""
+        return f"""You are an expert educational content creator. Generate a comprehensive study guide in EXACT JSON format.
 
 TOPIC: {topic}
 SUBJECT: {subject}
@@ -178,6 +255,66 @@ REQUIREMENTS:
 9. Include 5-7 exam tips
 
 CRITICAL: Return ONLY the JSON object. No markdown formatting, no ```json```, no explanations before or after."""
+
+    def generate_guide(self, template_id, analysis=None, customization=None):
+        """
+        Generate a study guide for the given template and analysis
+
+        Args:
+            template_id (str): ID of the template to use
+            analysis (dict): Content analysis results
+            customization (dict): Customization options (length, include_examples, include_questions)
+
+        Returns:
+            dict: Generated study guide with structured JSON matching guide.html template
+        """
+        try:
+            if not self.mistral_client:
+                return {
+                    "status": "error",
+                    "message": "Mistral AI service not available"
+                }
+
+            # Find the template
+            template = next(
+                (t for t in STUDY_TEMPLATES if t['id'] == template_id),
+                None
+            )
+
+            if not template:
+                return {
+                    "status": "error",
+                    "message": f"Template '{template_id}' not found"
+                }
+
+            analysis = analysis or {}
+            customization = customization or {}
+
+            logger.info(f"📝 Generating study guide: {template['name']}")
+
+            # Build the generation prompt
+            content_to_study = analysis.get('content', 'No content provided')
+            topic = analysis.get('topic', 'General Topic')
+            subject = analysis.get('subject', 'General')
+            difficulty = analysis.get('difficulty', 'intermediate')
+            length_pref = customization.get('length', 'medium')
+            include_examples = customization.get('include_examples', True)
+            include_questions = customization.get('include_questions', True)
+
+            # Check if this is a historical timeline template
+            is_historical = template_id == "historical_timeline"
+
+            # Get the appropriate prompt
+            if is_historical:
+                generation_prompt = self._get_historical_timeline_prompt(
+                    topic, subject, difficulty, length_pref, content_to_study,
+                    include_examples, include_questions
+                )
+            else:
+                generation_prompt = self._get_standard_prompt(
+                    topic, subject, difficulty, length_pref, content_to_study,
+                    include_examples, include_questions
+                )
 
             # Call Mistral API
             logger.info("🤖 Calling Mistral API for guide generation...")

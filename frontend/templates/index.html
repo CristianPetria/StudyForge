@@ -80,65 +80,77 @@
             </p>
         </div>
 
-        <!-- Featured Templates Grid (2 templates) -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-12">
+        <!-- Featured Templates Grid (3 templates) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto mb-12">
+            <!-- Historical Timeline Template -->
+            <div class="group bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-purple-500 cursor-pointer transform hover:-translate-y-2">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="text-5xl">📜</div>
+                    <span class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">NEW</span>
+                </div>
+                <h4 class="text-xl font-bold text-gray-900 mb-3">Historical Timeline</h4>
+                <p class="text-gray-600 mb-4 text-sm">
+                    Convert historical narratives into chronological timelines with cause-and-effect relationships, key figures, and events.
+                </p>
+                <div class="mb-4">
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-2 py-1 bg-purple-50 text-purple-700 rounded-lg text-xs">📅 Timeline</span>
+                        <span class="px-2 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs">👥 Figures</span>
+                        <span class="px-2 py-1 bg-green-50 text-green-700 rounded-lg text-xs">🔗 Causes</span>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="selectTemplate('historical_timeline')" class="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg transition text-sm">
+                        Use This Template
+                    </button>
+                </div>
+            </div>
+
             <!-- Marketing Template -->
-            <div class="group bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-indigo-500 cursor-pointer transform hover:-translate-y-2">
+            <div class="group bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-indigo-500 cursor-pointer transform hover:-translate-y-2">
                 <div class="flex items-start justify-between mb-4">
                     <div class="text-5xl">📊</div>
                     <span class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-semibold">FEATURED</span>
                 </div>
-                <h4 class="text-2xl font-bold text-gray-900 mb-3">Marketing & Business Concepts</h4>
-                <p class="text-gray-600 mb-6">
-                    Perfect for marketing frameworks, business strategies, and case studies. Includes real-world examples, formulas, and practical applications.
+                <h4 class="text-xl font-bold text-gray-900 mb-3">Marketing & Business</h4>
+                <p class="text-gray-600 mb-4 text-sm">
+                    Perfect for marketing frameworks, business strategies, and case studies. Includes real-world examples and practical applications.
                 </p>
-                <div class="mb-6">
+                <div class="mb-4">
                     <div class="flex flex-wrap gap-2">
-                        <span class="px-3 py-1 bg-purple-50 text-purple-700 rounded-lg text-sm">📈 Frameworks</span>
-                        <span class="px-3 py-1 bg-blue-50 text-blue-700 rounded-lg text-sm">💼 Case Studies</span>
-                        <span class="px-3 py-1 bg-green-50 text-green-700 rounded-lg text-sm">🎯 Examples</span>
+                        <span class="px-2 py-1 bg-purple-50 text-purple-700 rounded-lg text-xs">📈 Frameworks</span>
+                        <span class="px-2 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs">💼 Cases</span>
+                        <span class="px-2 py-1 bg-green-50 text-green-700 rounded-lg text-xs">🎯 Examples</span>
                     </div>
                 </div>
-                <div class="flex gap-3">
-                    <button onclick="showModalWithTemplate('marketing')" class="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg transition">
+                <div class="flex gap-2">
+                    <button onclick="showModalWithTemplate('marketing')" class="flex-1 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg transition text-sm">
                         Use This Template
                     </button>
-                    <a href="/api/guide/demo-marketing" target="_blank" class="px-6 py-3 bg-indigo-50 text-indigo-600 rounded-xl font-semibold hover:bg-indigo-100 transition flex items-center justify-center">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                    </a>
                 </div>
             </div>
 
             <!-- Technical Documentation Template -->
-            <div class="group bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-purple-500 cursor-pointer transform hover:-translate-y-2">
+            <div class="group bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-teal-500 cursor-pointer transform hover:-translate-y-2">
                 <div class="flex items-start justify-between mb-4">
                     <div class="text-5xl">⚙️</div>
-                    <span class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">FEATURED</span>
+                    <span class="px-3 py-1 bg-teal-100 text-teal-700 rounded-full text-xs font-semibold">FEATURED</span>
                 </div>
-                <h4 class="text-2xl font-bold text-gray-900 mb-3">Technical & Engineering Docs</h4>
-                <p class="text-gray-600 mb-6">
-                    Ideal for API documentation, technical specifications, and engineering concepts. Includes code examples and step-by-step explanations.
+                <h4 class="text-xl font-bold text-gray-900 mb-3">Technical & Engineering</h4>
+                <p class="text-gray-600 mb-4 text-sm">
+                    Ideal for API documentation, technical specifications, and engineering concepts. Includes code examples and step-by-step guides.
                 </p>
-                <div class="mb-6">
+                <div class="mb-4">
                     <div class="flex flex-wrap gap-2">
-                        <span class="px-3 py-1 bg-cyan-50 text-cyan-700 rounded-lg text-sm">💻 Code</span>
-                        <span class="px-3 py-1 bg-orange-50 text-orange-700 rounded-lg text-sm">🔧 APIs</span>
-                        <span class="px-3 py-1 bg-pink-50 text-pink-700 rounded-lg text-sm">📐 Diagrams</span>
+                        <span class="px-2 py-1 bg-cyan-50 text-cyan-700 rounded-lg text-xs">💻 Code</span>
+                        <span class="px-2 py-1 bg-orange-50 text-orange-700 rounded-lg text-xs">🔧 APIs</span>
+                        <span class="px-2 py-1 bg-pink-50 text-pink-700 rounded-lg text-xs">📐 Diagrams</span>
                     </div>
                 </div>
-                <div class="flex gap-3">
-                    <button onclick="showModalWithTemplate('technical')" class="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg transition">
+                <div class="flex gap-2">
+                    <button onclick="showModalWithTemplate('technical')" class="flex-1 px-4 py-2 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-xl font-semibold hover:shadow-lg transition text-sm">
                         Use This Template
                     </button>
-                    <a href="/api/guide/demo-technical" target="_blank" class="px-6 py-3 bg-purple-50 text-purple-600 rounded-xl font-semibold hover:bg-purple-100 transition flex items-center justify-center">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                    </a>
                 </div>
             </div>
         </div>
