@@ -210,7 +210,7 @@ def complete_workflow():
             guide_id = str(uuid.uuid4())
 
             # Extract the study guide data from the workflow result
-            study_guide = result['workflow'].get('generation', {}).get('study_guide', {})
+            study_guide = result['workflow'].get('study_guide', {})
 
             # Store the guide
             _generated_guides[guide_id] = {

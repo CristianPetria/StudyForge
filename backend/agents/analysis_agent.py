@@ -55,7 +55,7 @@ Text to analyze:
             # Call Mistral API
             logger.info("🤖 Calling Mistral API...")
             response = self.mistral_client.chat.complete(
-                model="mistral-large-latest",
+                model="mistral-small-latest",  # Using smaller model to avoid rate limits
                 messages=[{"role": "user", "content": analysis_prompt}]
             )
             

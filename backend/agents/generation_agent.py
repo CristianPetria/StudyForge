@@ -182,7 +182,7 @@ CRITICAL: Return ONLY the JSON object. No markdown formatting, no ```json```, no
             # Call Mistral API
             logger.info("🤖 Calling Mistral API for guide generation...")
             response = self.mistral_client.chat.complete(
-                model="mistral-large-latest",
+                model="mistral-small-latest",  # Using smaller model to avoid rate limits
                 messages=[{"role": "user", "content": generation_prompt}],
                 response_format={"type": "json_object"}
             )
