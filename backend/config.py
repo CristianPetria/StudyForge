@@ -43,43 +43,12 @@ QDRANT_TEMPLATE_COLLECTION = "learning_templates"
 QDRANT_ANALYSIS_COLLECTION = "content_analysis"
 
 # ============================================================================
-# STUDY TEMPLATES
+# STUDY TEMPLATES - Load from template_definitions.py
 # ============================================================================
 
-STUDY_TEMPLATES = [
-    {
-        "id": "lecture-digest",
-        "name": "Lecture Digest",
-        "description": "Transform lengthy university lectures into concise, structured summaries with key concepts, definitions, and examples.",
-        "icon_emoji": "📋",
-        "example_use_case": "Converting 2-hour economics lecture notes into a 2-page study guide",
-        "sections": ["Key Concepts", "Definitions", "Important Examples", "Summary Points"]
-    },
-    {
-        "id": "case-study-analyzer",
-        "name": "Case Study Analyzer",
-        "description": "Break down business cases into problem statements, stakeholder analysis, solutions, and key takeaways.",
-        "icon_emoji": "🔍",
-        "example_use_case": "Analyzing Harvard Business School cases for strategic management courses",
-        "sections": ["Problem Statement", "Stakeholders", "Analysis Framework", "Recommendations", "Key Learnings"]
-    },
-    {
-        "id": "concept-mapper",
-        "name": "Concept Mapper",
-        "description": "Extract and organize technical concepts with their relationships, dependencies, and practical applications.",
-        "icon_emoji": "🗺️",
-        "example_use_case": "Creating study guides for programming documentation or technical papers",
-        "sections": ["Core Concepts", "Relationships", "Code Examples", "Use Cases", "Best Practices"]
-    },
-    {
-        "id": "exam-prep-sprint",
-        "name": "Exam Prep Sprint",
-        "description": "Generate focused exam preparation materials with practice questions, key formulas, and critical review points.",
-        "icon_emoji": "⚡",
-        "example_use_case": "Last-minute review guide for final exams with practice problems",
-        "sections": ["Must-Know Topics", "Key Formulas", "Practice Questions", "Common Mistakes", "Quick Review"]
-    }
-]
+from backend.template_definitions import get_all_templates
+
+STUDY_TEMPLATES = get_all_templates()
 
 # ============================================================================
 # LOGGING
