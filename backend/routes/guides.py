@@ -243,6 +243,21 @@ def complete_workflow():
         }), 500
 
 
+@guides_bp.route('/guide/<guide_id>/json', methods=['GET'])
+def view_guide_json(guide_id):
+    """
+    GET /api/guide/<guide_id>/json
+    Returns the raw guide data as JSON for debugging
+    """
+    try:
+        if guide_id in _generated_guides:
+            return jsonify(_generated_guides[guide_id]), 200
+        else:
+            return jsonify({"status": "error", "message": "Guide not found"}), 404
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
 @guides_bp.route('/guide/<guide_id>', methods=['GET'])
 def view_guide(guide_id):
     """
@@ -258,6 +273,10 @@ def view_guide(guide_id):
         if guide_id in _generated_guides:
             guide = _generated_guides[guide_id]
             logger.info(f"✅ Found generated guide: {guide_id}")
+
+            # Debug: Log the structure to see what we have
+            logger.info(f"Guide structure: template={guide.get('template')}, data keys={list(guide.get('data', {}).keys())}")
+
             return render_template('guide.html', guide=guide)
 
         # Otherwise, serve test data for demo/testing

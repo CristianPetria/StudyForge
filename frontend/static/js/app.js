@@ -196,6 +196,25 @@ function selectTemplate(templateId) {
 }
 
 /**
+ * Show modal with a specific template pre-selected
+ */
+function showModalWithTemplate(templateType) {
+    selectedTemplate = { id: templateType };
+
+    if (templateType === 'marketing') {
+        document.getElementById('modal-template-emoji').textContent = '📊';
+        document.getElementById('modal-template-name').textContent = 'Marketing & Business Concepts';
+        document.getElementById('modal-template-description').textContent = 'Perfect for marketing frameworks, business strategies, and case studies';
+    } else if (templateType === 'technical') {
+        document.getElementById('modal-template-emoji').textContent = '⚙️';
+        document.getElementById('modal-template-name').textContent = 'Technical & Engineering Docs';
+        document.getElementById('modal-template-description').textContent = 'Ideal for API documentation, technical specifications, and engineering concepts';
+    }
+
+    openModal();
+}
+
+/**
  * Show custom template modal (no template pre-selected)
  */
 function showCustomModal() {
@@ -205,6 +224,13 @@ function showCustomModal() {
     document.getElementById('modal-template-description').textContent = 'Our AI will analyze your content and choose the best structure';
 
     openModal();
+}
+
+/**
+ * Scroll to templates section
+ */
+function scrollToTemplates() {
+    document.getElementById('templates').scrollIntoView({ behavior: 'smooth' });
 }
 
 // ============================================================================
@@ -282,79 +308,43 @@ async function analyzeContent() {
     showProgress('Analyzing your content...', 0);
 
     try {
-        // Step 1: Analyze content
-        updateProgress('Analyzing content structure...', 25);
-        const analysisResponse = await fetch(`${API_BASE_URL}/api/analyze`, {
+        // Use the complete workflow endpoint (orchestrates analyze -> match -> generate)
+        updateProgress('Analyzing content and generating study guide...', 50);
+
+        const response = await fetch(`${API_BASE_URL}/api/complete-workflow`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 content: content,
-                content_type: 'text'
-            })
-        });
-
-        const analysisData = await analysisResponse.json();
-        console.log('📊 Analysis result:', analysisData);
-
-        if (analysisData.status !== 'success') {
-            throw new Error(analysisData.message || 'Analysis failed');
-        }
-
-        currentAnalysisId = 'temp_' + Date.now(); // Placeholder ID
-
-        // Step 2: Match template (if not already selected)
-        updateProgress('Matching to best template...', 50);
-        let finalTemplate = selectedTemplate;
-
-        if (!selectedTemplate) {
-            const matchResponse = await fetch(`${API_BASE_URL}/api/match-template`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    analysis_id: currentAnalysisId
-                })
-            });
-
-            const matchData = await matchResponse.json();
-            console.log('🎯 Matched template:', matchData);
-
-            if (matchData.status === 'success' && matchData.matched_template) {
-                finalTemplate = matchData.matched_template;
-            }
-        }
-
-        // Step 3: Generate study guide
-        updateProgress('Generating your study guide...', 75);
-        const generateResponse = await fetch(`${API_BASE_URL}/api/generate-guide`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                analysis_id: currentAnalysisId,
-                template_id: finalTemplate?.id || 'lecture-digest',
+                content_type: 'text',
+                template_id: selectedTemplate?.id,  // Optional - AI will match if not provided
                 customization_options: options
             })
         });
 
-        const generateData = await generateResponse.json();
-        console.log('📚 Generated guide:', generateData);
+        const data = await response.json();
+        console.log('📚 Workflow result:', data);
 
-        if (generateData.status !== 'success') {
-            throw new Error(generateData.message || 'Guide generation failed');
+        if (data.status !== 'success') {
+            throw new Error(data.message || 'Guide generation failed');
         }
 
         // Complete!
-        updateProgress('Complete!', 100);
+        updateProgress('Complete! Opening your study guide...', 100);
+
         setTimeout(() => {
             setLoadingState(false);
+            hideProgress();
             closeModal();
-            showPreview(generateData.study_guide, finalTemplate);
-            showToast('Study guide generated successfully!', 'success');
+
+            // Redirect to the generated guide page
+            if (data.guide_id) {
+                window.location.href = `${API_BASE_URL}/api/guide/${data.guide_id}`;
+            } else {
+                showToast('Study guide generated but URL missing!', 'error');
+            }
         }, 500);
 
     } catch (error) {
